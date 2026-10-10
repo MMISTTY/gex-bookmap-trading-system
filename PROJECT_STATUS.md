@@ -1,67 +1,39 @@
 # Project status
 
-## Completed
-- Python 3.12 workspace inspected; Streamlit, pandas, pytest, and Ruff available.
-- Domain models and validated paper-only configuration implemented.
-- Official Bookmap L1/Python API documentation inspected.
+Updated 2026-10-10 UTC. Paper research MVP published.
 
-## Verified external interfaces
-- Bookmap L1 Java add-ons expose depth/trade callbacks.
-- Official Python API page states BookmapData/dxFeed are unsupported by Python API.
-- MNQ specification: 0.25-point tick, $0.50 tick value.
-- GitHub account MMISTTY is connected; connector reads work, writes previously returned 403.
-- Local Bookmap installation/data entitlement and live bridge are NOT verified.
+## Completed and verified
+- Public repository: https://github.com/MMISTTY/gex-bookmap-trading-system
+- Initial source published as b2f5f01; project pinned to MMISTTY profile.
+- Removed accidental terminal-output file in 740e1c3.
+- Final development checkpoint: 40 tests passed; Ruff checks and formatting passed.
+- Streamlit server startup and HTTP health verified; seven dashboard pages implemented.
+- Published initial commit shows successful GitHub checks.
+- Barchart-style options and manual-level ingestion with explicit dealer-sign assumptions and missing-field diagnostics.
+- Locked approximate QQQ-to-MNQ anchors, editable mapped levels, append-only SQLite snapshots.
+- Normalized JSONL/CSV recordings, simulation and incremental local file-tail adapter.
+- Depth, delta, CVD and documented absorption/sweep approximations.
+- Explainable reversal and sustained-breakout rules; independent risk vetoes and costed paper fills.
+- Shared event engine for replay and paper processing; chronological fixed-parameter out-of-sample split, analytics and trade explanations.
+- README, architecture, data/strategy/backtest/Bookmap guides, MIT license, VS Code setup and CI.
 
 ## Architecture
-src/gexbook: gex, mapping, bookmap, strategy, risk, execution, backtesting, analytics,
-storage, dashboard. Frozen point-in-time snapshots feed an event-driven paper engine.
+Python 3.12+, Streamlit and SQLite. Modules under src/gexbook: gex, mapping, bookmap, strategy, risk, execution, backtesting, analytics, storage and dashboard. Point-in-time snapshots and validated events feed the same decision pipeline. No live-order connector exists.
 
-## Completed phase 2
-- Barchart-style options/levels ingestion, explicit sign assumptions and missing-field reporting.
-- Locked QQQ-to-MNQ mapping and append-only SQLite snapshots.
-- Normalized JSONL/CSV replay and incremental file-tail adapter.
-- Order-book, delta, CVD, concentration, absorption/sweep approximations.
-- Explainable rejection/breakout rules, independent risk vetoes, costed paper fills.
-- Point-in-time replay, fixed-config chronological out-of-sample split and analytics.
-- 29 tests passed at phase checkpoint.
+## Safety and hardening
+- Personal settings remain in ignored runtime/paper-config.json; public defaults remain unchanged.
+- Chicago session dates; stale, future, disconnected, crossed or invalid quotes prevent entries.
+- Integer event sequences, bounded defense observations and continuously qualifying breakout flow.
+- Disconnect/reset clears strategy state. Risk limits override signals.
+- Simulation fixtures are software tests, not historical performance or evidence of profitability.
 
-## Remaining
-Java capture bridge, dashboard, integration tests, documentation, packaging and publication.
+## Integration status and remaining work
+- Official Bookmap L1 Java depth/trade callbacks verified in documentation. Official Python API documentation excludes BookmapData/dxFeed support.
+- Experimental Java capture source and build script exist, but have NOT been compiled, loaded or connected to the owner's installation.
+- Next external gate: compile against the installed SDK and verify provider entitlements, units, initial book and reconnect behavior.
+- No actual options or point-in-time historical order-flow data was supplied for this build. Real-data evaluation remains outstanding.
+- MNQ economics configured as 0.25-point tick and $0.50/tick; NQ analysis cannot authorize MNQ fills.
+- No known failing Python test at the verified checkpoint. Java compilation and actual Bookmap connectivity remain unverified.
 
-## Known blockers
-No actual options or historical order-flow files provided for this build. No access to
-user's VS Code or Bookmap process. Use explicitly synthetic fixtures for verification.
-
-## Completed phase 3
-- Seven-page Streamlit dashboard, editable GEX levels, local SQLite snapshots and JSON export.
-- Normalized history upload, synthetic replay, equity/trade reviews, configuration validation.
-- Local file-tail state and emergency paper controls; no brokerage connector.
-- Experimental Java L1 capture source and SDK build script (NOT compiled or deployed).
-- README, MIT license, data/strategy/backtest/Bookmap guides, VS Code configuration and CI.
-- 32 tests passed; Ruff passed; Streamlit server HTTP health verified.
-- Short rejection and sustained breakout tested; adverse breakout fills correctly vetoed by risk.
-- Disconnect/reset now clears pre-disconnection strategy acceptance/defense state.
-
-## Outstanding external gates
-- Actual Bookmap SDK compilation, entitlement/provider checks and live depth initialization.
-- Actual point-in-time options/order-flow data and out-of-sample performance validation.
-- GitHub publication underway through authorized signed-in browser; connector write permissions blocked.
-
-## Publication checkpoint
-- Public repository created: MMISTTY/gex-bookmap-trading-system.
-- New-repository Contents API write returned 403 (Resource not accessible by integration).
-- Browser folder upload rejected; expanded source-tree publication blocked by write access.
-- Complete tracked source archive and README prepared for browser upload as a usable fallback.
-- 33 tests passed including dashboard manual save and session-anchor reuse.
-- Browser multi-file upload did not complete and was interrupted. Repository verified EMPTY.
-- Code has NOT been pushed or published. Downloadable source archive is the completed deliverable.
-
-## Continued hardening
-- Personal account configuration saves to ignored runtime/paper-config.json, preserving public defaults.
-- Dashboard session dates and expiration filtering now use America/Chicago.
-- Risk independently checks quote timestamp, finite/positive BBO and uncrossed geometry.
-- Fractional/Boolean event sequences are rejected instead of coerced to integers.
-- Breakout timers require continuous directional flow and diminished opposing defense.
-- Observed defense baselines expire within the rolling window; zero-importance levels are vetoed.
-- GitHub installation lookup returned no app installations; write authorization remains an external gate.
-- Final hardening checkpoint: 40 tests passed; Ruff checks and formatting passed.
+## Continuation
+Use the existing repository and preserve its history. Pull remote changes before editing. Keep private CSVs under data/private and runtime data out of commits. Do not reinitialize, force push, or rebuild completed phases. See AGENTS.md for stable instructions.
