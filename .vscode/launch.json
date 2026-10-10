@@ -1,0 +1,1 @@
+{"version":"0.2.0","configurations":[{"name":"Paper research dashboard","type":"debugpy","request":"launch","module":"streamlit","args":["run","app.py","--server.address","127.0.0.1"],"console":"integratedTerminal","justMyCode":true}]}

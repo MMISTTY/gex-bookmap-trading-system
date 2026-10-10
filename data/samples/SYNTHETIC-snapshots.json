@@ -1,0 +1,46 @@
+[
+  {
+    "id": "synthetic-gex",
+    "available_at": "2026-01-05T14:59:00+00:00",
+    "valid_until": "2026-01-05T21:00:00+00:00",
+    "levels": [
+      {
+        "id": "support",
+        "kind": "Put Wall",
+        "qqq_price": 500,
+        "mnq_price": 20000,
+        "importance": 1.0,
+        "role": "support",
+        "provenance": "SYNTHETIC FIXTURE; not observed options data",
+        "metric": null,
+        "approximate": false,
+        "override_reason": ""
+      },
+      {
+        "id": "resistance",
+        "kind": "Call Wall",
+        "qqq_price": 501.5,
+        "mnq_price": 20060,
+        "importance": 1.0,
+        "role": "resistance",
+        "provenance": "SYNTHETIC FIXTURE; not observed options data",
+        "metric": null,
+        "approximate": false,
+        "override_reason": ""
+      }
+    ],
+    "anchor": {
+      "session": "SYNTHETIC-2026-01-05",
+      "locked_at": "2026-01-05T14:55:00+00:00",
+      "factor": 40.0,
+      "qqq_reference": null,
+      "mnq_reference": null,
+      "reference_at": null,
+      "method": "manual_factor"
+    },
+    "source": "simulation",
+    "assumptions": [
+      "All prices, volume and levels are synthetic"
+    ]
+  }
+]

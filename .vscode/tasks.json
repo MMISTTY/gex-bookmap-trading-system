@@ -1,0 +1,1 @@
+{"version":"2.0.0","tasks":[{"label":"Tests","type":"shell","command":"python -m pytest -q","group":"test","problemMatcher":[]},{"label":"Synthetic replay","type":"shell","command":"python -m gexbook.cli demo","problemMatcher":[]}]}

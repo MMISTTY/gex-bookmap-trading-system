@@ -1,0 +1,26 @@
+# Data contracts
+
+Options CSV may contain long rows (`Type,Strike,Open Int,Gamma,Expiration`) or wide rows (`Strike,Call Open Interest,Put Open Interest,Call Gamma,Put Gamma`). Supported aliases are defined centrally in `gex/ingestion.py`. Commas, currency signs, K/M/B suffixes and parentheses are normalized. Ambiguous columns, duplicate contracts, negative OI/gamma and nonfinite numbers are rejected. Expiration filtering requires the actual date; absent expiry is warned. One upload is processed at a time; combined files must preserve unique contracts and consistent units.
+
+A manual levels file can use `Level Type,QQQ Price,MNQ Price,Role`. Roles are support/resistance/neutral. Explicit supplied flip/walls are preserved. Existing profiles use `Strike,Net GEX` and require a declared signed-data assumption and units to be ranked.
+
+## Normalized event stream
+
+JSONL has one event per line. CSV uses the same field names. An example reset:
+
+```json
+{"seq":0,"ts":"2026-01-05T15:00:00+00:00","kind":"reset","symbol":"MNQ","source":"recorded","price":0,"size":0,"side":""}
+```
+
+- `seq`: consecutive nonnegative integers; reset starts a newly reconstructed book.
+- `ts`: timezone-aware ISO timestamp; preserve source chronology, never sort corruption away.
+- `kind`: reset, depth, trade, heartbeat, disconnect.
+- `symbol`: one configured instrument per engine; MNQ needed for execution.
+- `source`: recorded, simulation, bookmap_bridge. Do not mix sources.
+- `depth`: absolute size at price, bid/ask; zero deletes a level.
+- `trade`: positive size/price and known aggressor buy/sell. Unknown sides cannot be fabricated.
+- `heartbeat`: does not refresh trade/depth freshness.
+
+First supply reset and a complete book, then enough recent trades for warmup. Missing sequence or timestamp regression invalidates state. A local file tail buffers incomplete lines and rejects file replacement/truncation; restart using a fully rebuilt stream.
+
+Snapshot JSON is an array of `Snapshot` objects, downloadable from GEX Levels. Each records ID, availability, expiry, levels, locked anchor, source and assumptions. See the explicitly synthetic sample for an executable schema example. Runtime SQLite contains immutable anchors/snapshots and local audit records. Uploading a historical snapshot today does not establish that it was known historically; you must preserve its true original availability.
