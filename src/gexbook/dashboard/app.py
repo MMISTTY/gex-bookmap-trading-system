@@ -1,5 +1,6 @@
 """Local research dashboard. All execution controls are paper-only."""
 
+from hashlib import sha256
 from dataclasses import asdict
 from datetime import date, datetime, timedelta, timezone
 import json
@@ -219,6 +220,7 @@ def gex_page(store, snapshots):
         st.session_state.gex_notes = report.warnings + list(notes)
         st.session_state.gex_source = upload.name
         st.session_state.gex_source_profile = source_info
+        st.session_state.gex_source_digest = sha256(upload.getvalue()).hexdigest()
         store.audit(
             datetime.now(timezone.utc),
             "csv_import",
@@ -262,14 +264,22 @@ def gex_page(store, snapshots):
     if st.button("Map and save session snapshot"):
         # Historical files may be inspected but cannot silently become today's trade inputs.
         imported_profile = st.session_state.get("gex_source_profile")
-        if upload is not None and st.session_state.get("gex_source") != upload.name:
+        if upload is not None and (
+            st.session_state.get("gex_source") != upload.name
+            or st.session_state.get("gex_source_digest") != sha256(upload.getvalue()).hexdigest()
+        ):
             raise ValueError("Revalidate the newly selected file before saving a snapshot")
         if imported_profile is not None:
             try:
                 session_date = date.fromisoformat(session)
             except ValueError as exc:
                 raise ValueError("Imported data requires an ISO session date (YYYY-MM-DD)") from exc
-            problems = imported_profile.current_session_errors(session_date)
+            today = datetime.now(ZoneInfo("America/Chicago")).date()
+            if session_date != today:
+                raise ValueError(
+                    "Imported dashboard snapshots require today's Chicago session date"
+                )
+            problems = imported_profile.current_session_errors(today)
             if problems:
                 raise ValueError(
                     "Cannot save an imported snapshot for this session: " + "; ".join(problems)

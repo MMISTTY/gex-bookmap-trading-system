@@ -54,3 +54,25 @@ def test_dashboard_manual_mapping_save_and_locked_anchor(tmp_path, monkeypatch):
     store = Store()
     assert store.snapshots()[-1].anchor == saved[0].anchor
     store.close()
+
+
+def test_backdated_import_cannot_be_saved_as_fresh(tmp_path, monkeypatch):
+    from datetime import date
+    from pathlib import Path
+    from gexbook.gex.source import SourceProfile
+    from gexbook.storage.sqlite import Store
+
+    app_path = Path(__file__).resolve().parents[1] / "app.py"
+    monkeypatch.chdir(tmp_path)
+    app = AppTest.from_file(app_path).run()
+    app.session_state["gex_source_profile"] = SourceProfile(
+        "gamma_profile", date(2020, 1, 2), None, "Barchart footer"
+    )
+    app.sidebar.radio[0].set_value("GEX Levels").run()
+    next(x for x in app.text_input if x.label == "Session ID").set_value("2020-01-02")
+    next(b for b in app.button if b.label == "Map and save session snapshot").click().run()
+    assert not app.exception
+    assert any("today's Chicago session date" in x.value for x in app.error)
+    store = Store()
+    assert store.snapshots() == []
+    store.close()

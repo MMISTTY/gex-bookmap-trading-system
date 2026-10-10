@@ -27,7 +27,9 @@ class SourceProfile:
         if not self.is_position_snapshot:
             errors.append("Options-flow trade prints are not a unique-contract GEX snapshot")
         if self.observed_on is None:
-            errors.append("Source observation date is unknown; cannot approve for current-session use")
+            errors.append(
+                "Source observation date is unknown; cannot approve for current-session use"
+            )
         elif self.observed_on != session_date:
             errors.append(
                 f"Options source was observed {self.observed_on}; current session is {session_date}"
@@ -84,4 +86,6 @@ def inspect_source(filename: str, text: str) -> SourceProfile:
             )
         except ValueError:
             pass
-    return SourceProfile(kind, observed_on, expires_on, "Barchart footer" if match else "no verified as-of footer")
+    return SourceProfile(
+        kind, observed_on, expires_on, "Barchart footer" if match else "no verified as-of footer"
+    )

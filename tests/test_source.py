@@ -31,8 +31,7 @@ def test_trade_flow_rejected_instead_of_deduplicated_as_options_chain():
 
 def test_gamma_weighted_wall_can_differ_from_oi_only_wall():
     report = parse_csv(
-        "Type,Strike,Open Int,Gamma\nCall,750,1000,0.001\nCall,760,100,0.1\n"
-        "Put,740,100,0.02\n"
+        "Type,Strike,Open Int,Gamma\nCall,750,1000,0.001\nCall,760,100,0.1\nPut,740,100,0.02\n"
     )
     levels, _ = derive_levels(report, 755)
     wall = next(level for level in levels if level.kind == "Call Wall")
@@ -46,3 +45,17 @@ def test_partial_gamma_falls_back_to_open_interest():
     levels, notes = derive_levels(report, 755)
     assert next(x for x in levels if x.kind == "Call Wall").qqq_price == 750
     assert any("missing contract gamma" in x for x in notes)
+
+
+def test_expired_profile_rows_are_excluded_before_aggregation():
+    report = parse_csv(
+        "Strike,Net GEX,Expiration\n750,999,2026-10-07\n750,25,2026-10-16\n",
+        as_of=date(2026, 10, 10),
+    )
+    assert report.profiles == {750: 25}
+    assert len(report.warnings) == 1
+
+
+def test_all_expired_profile_is_not_usable():
+    with pytest.raises(DataError):
+        parse_csv("Strike,Net GEX,Expiration\n750,999,2026-10-07\n", as_of=date(2026, 10, 10))

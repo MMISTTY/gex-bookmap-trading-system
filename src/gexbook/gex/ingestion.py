@@ -172,10 +172,6 @@ def parse_csv(text: str, as_of: date | None = None) -> ImportReport:
             strike = number(r["strike"], nonnegative=True)
             if not strike or strike <= 0:
                 raise DataError("Missing or nonpositive strike")
-            if r.get("net_gex", "").strip():
-                if strike in profiles:
-                    raise DataError("Duplicate strike in provided profile; aggregate explicitly")
-                profiles[strike] = number(r["net_gex"])
             expiry = r.get("expiration", "").strip() or None
             if expiry:
                 parsed = None
@@ -193,6 +189,10 @@ def parse_csv(text: str, as_of: date | None = None) -> ImportReport:
                 if as_of and parsed < as_of:
                     warnings.append(f"Excluded expired contract row {rownum}")
                     continue
+            if r.get("net_gex", "").strip():
+                if strike in profiles:
+                    raise DataError("Duplicate strike in provided profile; aggregate explicitly")
+                profiles[strike] = number(r["net_gex"])
             types = (
                 [("call", "")]
                 if key(r.get("type", "")) in ("call", "c")

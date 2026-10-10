@@ -53,3 +53,10 @@ and cannot be treated as independently verified dealer inventories.
 
 Historical CSVs are intentionally **not included** in the public repository.
 Keep personal source files under ignored `data/private/`.
+
+Dashboard saves of imported data require the actual current Chicago date, independently
+of the editable session label. Historical files can be inspected but cannot be backdated
+and saved with a fresh availability timestamp. Replacing an uploaded file, including
+same-name replacements, requires revalidation. Expired supplied GEX rows are excluded
+before profile aggregation. These checks validate metadata consistency, not the
+truthfulness or intraday availability of a vendor footer.

@@ -50,3 +50,18 @@ Use the existing repository and preserve its history. Pull remote changes before
 - Derived-only in-Bookmap processing is a possible future design, pending written clarification
   of permitted outputs; it is not implemented or represented as approved.
 - Verification: 46 tests passed; Ruff lint and format checks passed.
+
+## Phase 2 review — 2026-10-10
+- Reviewed user commit 53d3c44: source classification, historical-date validation,
+  options-flow rejection and gamma-weighted wall ranking. Baseline: 50 tests passed;
+  two files failed the formatting gate.
+- Fixed expired supplied GEX rows being retained before expiration filtering.
+- Imported dashboard snapshots now require today's Chicago session date; backdating
+  the label cannot turn historical data into a newly available trading snapshot.
+- Upload content hashes require revalidation when same-name file contents change.
+- Historical imports remain inspectable; unknown observation dates remain ineligible
+  for current-session snapshots. A footer date does not establish intraday availability.
+- Verification: 53 tests passed, including dashboard and expiry regressions; Ruff
+  lint and formatting passed. No actual Bookmap connection or historical edge validated.
+- Next external steps: apply this review patch, push from the authorized local checkout,
+  supply current options data and await Bookmap/provider approval before live capture.
