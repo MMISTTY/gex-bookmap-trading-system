@@ -23,6 +23,7 @@ Select `.venv` with **Python: Select Interpreter**. Recommended extensions, dash
 For a reproducible example, open **Backtesting → Run synthetic verification example**, then review **Overview**, **Bookmap Order Flow**, and **Strategy Monitor**. Alternatively:
 
 ```bash
+python -m gexbook.cli inspect-capture --events data/samples/SYNTHETIC-events.jsonl
 python -m gexbook.cli demo
 python -m gexbook.cli replay --events data/samples/SYNTHETIC-events.jsonl --snapshots data/samples/SYNTHETIC-snapshots.json
 ```

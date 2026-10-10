@@ -38,7 +38,7 @@ def export(engine, directory):
 
 def main():
     parser = argparse.ArgumentParser(description="GEX + Bookmap paper research; no live orders")
-    parser.add_argument("command", choices=["demo", "replay", "tail"])
+    parser.add_argument("command", choices=["demo", "replay", "tail", "inspect-capture"])
     parser.add_argument("--events")
     parser.add_argument("--snapshots")
     parser.add_argument(
@@ -52,6 +52,15 @@ def main():
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     config = Config.load(args.config) if args.config else Config.active()
+    if args.command == "inspect-capture":
+        from gexbook.bookmap.diagnostics import inspect_capture
+
+        if not args.events:
+            parser.error("--events is required for inspect-capture")
+        report = inspect_capture(args.events, config)
+        print(json.dumps(report, indent=2))
+        # Structural validation only; freshness and entitlement remain separate fields.
+        raise SystemExit(0 if report["capture_valid"] else 2)
     if args.command == "demo":
         events, snapshots = demo()
     else:

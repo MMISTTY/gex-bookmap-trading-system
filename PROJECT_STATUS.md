@@ -37,3 +37,16 @@ Python 3.12+, Streamlit and SQLite. Modules under src/gexbook: gex, mapping, boo
 
 ## Continuation
 Use the existing repository and preserve its history. Pull remote changes before editing. Keep private CSVs under data/private and runtime data out of commits. Do not reinitialize, force push, or rebuild completed phases. See AGENTS.md for stable instructions.
+
+## Capture diagnostics checkpoint — 2026-10-10
+- Added read-only `inspect-capture` CLI command: normalized schema, reset, continuity,
+  source/symbol, capture-end reliability and separate wall-clock freshness diagnostics.
+- No broker, execution, database or external connection is created by diagnostics.
+- Official Bookmap guidance confirms restricted paid-feed activation requires review/signing;
+  raw-data export in the existing bridge requires provider review. No bypass was added.
+- Latest user setup context reports the add-on is recognized but MNQ activation is restricted;
+  support approval was requested. This is not an independently verified live connection.
+- Java changes made on the user's computer have not been synchronized or inspected here.
+- Derived-only in-Bookmap processing is a possible future design, pending written clarification
+  of permitted outputs; it is not implemented or represented as approved.
+- Verification: 46 tests passed; Ruff lint and format checks passed.

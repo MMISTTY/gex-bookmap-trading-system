@@ -13,6 +13,45 @@ L1 Java add-ons receive depth, trades and SDK timestamps. The Python documentati
 
 An asynchronous bounded queue isolates disk writes from callbacks. Overflow or writer failure stops capture instead of silently dropping events. Python freshness/sequence rules then veto entries. A reset is emitted at the first callback; reliable depth reconstruction depends on your Bookmap delivering full initialization callbacks. This behavior has not been checked in an installed Bookmap session. Reload into a new capture file after failures; do not splice partial books together.
 
+## Restricted paid-feed approval gate
+
+Bookmap's [official add-on guidance](https://github.com/BookmapAPI/ai-skills/blob/main/SKILL.md)
+identifies the message "Most of the API modules are not allowed for this instrument"
+as a restricted-instrument activation block. Paid live data can require Bookmap validation
+and a signed add-on. Rebuilding a signed jar invalidates its signature.
+
+The current capture design exports raw depth/trade events. Official guidance states that
+market data should stay inside Bookmap for approval; this export design must therefore be
+reviewed by Bookmap before use with restricted feeds. Do not add `@UnrestrictedData` as a
+workaround: an annotation is not authorization. Do not change source labels or switch feeds
+to evade an entitlement restriction.
+
+A possible future architecture computes order-flow features inside Bookmap, then shares
+only outputs explicitly permitted by the provider. It is **not implemented or approved**;
+which fields may leave Bookmap must be established before building that transport.
+Use the existing simulation or recordings you are authorized to process while approval
+is pending. Never distribute private captures in GitHub issues or the public repository.
+
+## Read-only capture diagnostics
+
+Validate a closed capture or stable local copy before starting paper processing:
+
+```bash
+python -m gexbook.cli inspect-capture --events /absolute/path/capture.jsonl
+# Reproducible synthetic example:
+python -m gexbook.cli inspect-capture --events data/samples/SYNTHETIC-events.jsonl
+```
+
+JSON output distinguishes structural validity, quality at the last event and wall-clock
+freshness. It checks schema, initial reset, symbol/source consistency, sequence continuity,
+timestamps and existing order-book reliability rules. It reports event counts and explicit
+failure reasons. It creates no broker, orders, database or report file. Exit code 0 means
+structural validity only; code 2 means invalid/unreadable input. A historical file can pass
+structural checks while correctly reporting stale data. A partial final JSON row fails;
+retry on a closed copy rather than editing out missing data. Source labels are untrusted
+metadata, not proof of live connectivity or authorization. Full initial depth, units and
+aggressor semantics still require comparison against the approved provider feed.
+
 ## External setup gate
 
 No JDK, installed Bookmap jars or desktop session was available during development. **The Java source is uncompiled and unverified.** These steps are a deployment checklist, not a claim of an established connection:
