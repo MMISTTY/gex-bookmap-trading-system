@@ -1,7 +1,7 @@
 """Local research dashboard. All execution controls are paper-only."""
 
 from dataclasses import asdict
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 import json
 from pathlib import Path
 from uuid import uuid4
@@ -11,6 +11,7 @@ import streamlit as st
 from gexbook.config import Config
 from gexbook.models import Anchor, Level, Snapshot, jsonable, timestamp
 from gexbook.gex.ingestion import parse_csv, derive_levels
+from gexbook.gex.source import inspect_source
 from gexbook.mapping.anchors import map_level, synchronized_anchor
 from gexbook.storage.sqlite import Store
 from gexbook.bookmap.adapters import read_events
@@ -183,6 +184,18 @@ def gex_page(store, snapshots):
         "QQQ and MNQ coordinates are approximate. The factor is locked per session; quotes do not continuously move levels."
     )
     upload = st.file_uploader("Options or levels CSV", type=["csv"])
+    source_info = None
+    if upload is not None:
+        source_info = inspect_source(upload.name, upload.getvalue().decode("utf-8-sig"))
+        st.caption(
+            f"Detected file: {source_info.kind} • Barchart observed on: "
+            f"{source_info.observed_on or 'unverified'} • "
+            f"filename expiration: {source_info.expires_on or 'not supplied'}"
+        )
+        for warning in source_info.current_session_errors(
+            datetime.now(ZoneInfo("America/Chicago")).date()
+        ):
+            st.warning("Not eligible as fresh current-session GEX: " + warning)
     spot = st.number_input("QQQ reference / calculation spot", min_value=0.01, value=500.0)
     assumption = st.selectbox(
         "Dealer-position assumption",
@@ -192,14 +205,20 @@ def gex_page(store, snapshots):
     if st.button("Validate and derive uploaded levels"):
         if upload is None:
             raise ValueError("Upload your CSV first; no options data is supplied automatically.")
+        if not source_info.is_position_snapshot:
+            raise ValueError(
+                "Options-flow rows are trade prints, not a contract snapshot. "
+                "Use a gamma-levels or volatility-Greeks CSV."
+            )
         report = parse_csv(
             upload.getvalue().decode("utf-8-sig"),
-            as_of=datetime.now(ZoneInfo("America/Chicago")).date(),
+            as_of=source_info.observed_on or datetime.now(ZoneInfo("America/Chicago")).date(),
         )
         levels, notes = derive_levels(report, spot, assumption, units)
         st.session_state.level_rows = jsonable(levels)
         st.session_state.gex_notes = report.warnings + list(notes)
         st.session_state.gex_source = upload.name
+        st.session_state.gex_source_profile = source_info
         store.audit(
             datetime.now(timezone.utc),
             "csv_import",
@@ -241,6 +260,20 @@ def gex_page(store, snapshots):
     mtime = st.text_input("MNQ quote timestamp (with offset)", now_text)
     source = st.text_input("Level source", st.session_state.get("gex_source", "manual user levels"))
     if st.button("Map and save session snapshot"):
+        # Historical files may be inspected but cannot silently become today's trade inputs.
+        imported_profile = st.session_state.get("gex_source_profile")
+        if upload is not None and st.session_state.get("gex_source") != upload.name:
+            raise ValueError("Revalidate the newly selected file before saving a snapshot")
+        if imported_profile is not None:
+            try:
+                session_date = date.fromisoformat(session)
+            except ValueError as exc:
+                raise ValueError("Imported data requires an ISO session date (YYYY-MM-DD)") from exc
+            problems = imported_profile.current_session_errors(session_date)
+            if problems:
+                raise ValueError(
+                    "Cannot save an imported snapshot for this session: " + "; ".join(problems)
+                )
         now = datetime.now(timezone.utc)
         # Existing anchors are reused unchanged, preserving the original lock timestamp.
         existing = next((s.anchor for s in snapshots if s.anchor.session == session), None)

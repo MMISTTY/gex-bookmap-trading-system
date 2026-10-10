@@ -24,3 +24,32 @@ JSONL has one event per line. CSV uses the same field names. An example reset:
 First supply reset and a complete book, then enough recent trades for warmup. Missing sequence or timestamp regression invalidates state. A local file tail buffers incomplete lines and rejects file replacement/truncation; restart using a fully rebuilt stream.
 
 Snapshot JSON is an array of `Snapshot` objects, downloadable from GEX Levels. Each records ID, availability, expiry, levels, locked anchor, source and assumptions. See the explicitly synthetic sample for an executable schema example. Runtime SQLite contains immutable anchors/snapshots and local audit records. Uploading a historical snapshot today does not establish that it was known historically; you must preserve its true original availability.
+
+## Barchart historical import safety (Phase 2)
+
+The GEX upload page identifies Barchart **gamma-levels** profiles, **volatility/Greeks**
+contract rows, and **options-flow** trade prints. The last category is *not* a
+unique-contract OI/GEX snapshot: repeated prints must not be deduplicated as if
+they were separate open-interest observations. Upload a gamma-levels or Greeks
+CSV for GEX calculations instead.
+
+The source date is read from the Barchart `Downloaded ... as of` footer, when
+present, and file expiration from a recognized `exp-YYYYMMDD` or
+`exp-YYYY-MM-DD` filename segment. These are reported separately; neither
+file modification time nor upload time proves historical data availability.
+An imported snapshot cannot be saved as current-session input if its observed
+date is unknown/different or its filename expiration is already past. These
+checks prevent accidental use of old option-chain inputs as fresh signals; they
+do **not** establish when during a historical day the data became available.
+For rigorous historical backtesting, preserve the original availability time.
+
+When contract gamma and open interest are complete on one side, a put/call wall
+proxy ranks strikes by sum of **gamma × open interest** across the included
+contracts. If any contract gamma is missing for that side, the model falls
+back explicitly to an **open-interest-only wall proxy**. Both remain approximate
+concentrations, not verified dealer holdings, and cannot establish a gamma flip.
+Provided signed exposure columns require an explicitly declared unit convention
+and cannot be treated as independently verified dealer inventories.
+
+Historical CSVs are intentionally **not included** in the public repository.
+Keep personal source files under ignored `data/private/`.

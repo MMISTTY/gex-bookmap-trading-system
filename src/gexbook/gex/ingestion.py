@@ -115,6 +115,11 @@ def parse_csv(text: str, as_of: date | None = None) -> ImportReport:
     if header_idx is None:
         raise DataError("Missing recognized header: strike, level type, or named level columns")
     headers = [REVERSE.get(key(c), key(c)) for c in rows[header_idx]]
+    if {"symbol", "trade", "size", "side"}.issubset(set(headers)):
+        raise DataError(
+            "Options-flow rows are individual trade prints with repeated contracts, not a "
+            "unique-contract GEX snapshot. Use gamma-levels or volatility-Greeks CSV for GEX."
+        )
     if len(headers) != len(set(headers)):
         raise DataError("Duplicate normalized columns; use unambiguous call/put column names")
     contracts, profiles, levels, warnings = [], {}, [], []
@@ -239,9 +244,12 @@ def derive_levels(
     ]:
         selected = [c for c in report.contracts if c.option_type == option_type]
         if selected and all(c.oi is not None for c in selected):
+            # Contract gamma × OI ranks concentration more meaningfully than raw OI.
+            # A single missing gamma makes the whole side fall back to an OI-only proxy.
+            weighted = all(c.gamma is not None for c in selected)
             amounts = defaultdict(float)
             for c in selected:
-                amounts[c.strike] += c.oi
+                amounts[c.strike] += c.oi * c.gamma if weighted else c.oi
             strike, amount = max(amounts.items(), key=lambda p: p[1])
             if amount > 0:
                 levels.append(
@@ -251,7 +259,11 @@ def derive_levels(
                         strike,
                         importance=1,
                         role=role,
-                        provenance="largest open-interest concentration; wall proxy",
+                        provenance=(
+                            "largest gamma × open-interest concentration; unsigned wall proxy"
+                            if weighted
+                            else "largest open-interest concentration; gamma unavailable; wall proxy"
+                        ),
                         metric=amount,
                         approximate=True,
                     )
