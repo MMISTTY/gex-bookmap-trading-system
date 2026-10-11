@@ -19,6 +19,7 @@ from gexbook.bookmap.adapters import read_events
 from gexbook.bookmap.simulation import demo
 from gexbook.backtesting.replay import replay, out_of_sample
 from gexbook.analytics.performance import summary, grouped
+from gexbook.analytics.reporting import report_bundle
 
 PAGES = [
     "Overview",
@@ -238,7 +239,16 @@ def gex_page(store, snapshots):
         st.session_state.pop("level_editor", None)
         st.session_state.pop("gex_source_label", None)
         st.session_state.level_rows = jsonable(levels)
-        st.session_state.gex_notes = report.warnings + list(notes)
+        st.session_state.gex_notes = (
+            report.warnings
+            + list(notes)
+            + [
+                f"Source kind: {source_info.kind}; observation date: {source_info.observed_on}; "
+                f"filename expiration: {source_info.expires_on}; evidence: {source_info.evidence}",
+                "Uploaded CSV SHA-256: " + sha256(upload.getvalue()).hexdigest(),
+                f"Calculation spot: {spot}; assumption: {assumption}; supplied units: {units or 'none'}",
+            ]
+        )
         st.session_state.gex_source = upload.name
         st.session_state.gex_source_profile = source_info
         st.session_state.gex_source_digest = sha256(upload.getvalue()).hexdigest()
@@ -391,6 +401,15 @@ def backtest_page(c):
     engine = st.session_state.get("engine")
     if engine:
         st.warning(engine.result.label)
+        st.download_button(
+            "Download research report bundle",
+            report_bundle(engine),
+            "research-report.zip",
+            mime="application/zip",
+        )
+        st.caption(
+            "Report includes levels and paper settings. Review before sharing; raw feed and options files are excluded."
+        )
         st.json(summary(engine.result))
         st.subheader("Data coverage")
         st.caption(
