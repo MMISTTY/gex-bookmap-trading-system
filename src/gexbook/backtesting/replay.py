@@ -1,8 +1,10 @@
 """Replay and paper mode share the exact event-by-event decision pipeline."""
 
 from collections import Counter
+from hashlib import sha256
+import json
 
-from gexbook.models import Result, Snapshot, Event
+from gexbook.models import Result, Snapshot, Event, jsonable, timestamp
 from gexbook.config import Config
 from gexbook.bookmap.flow import OrderFlow
 from gexbook.strategy.engine import Strategy
@@ -42,6 +44,21 @@ class Engine:
             "with_both": 0,
         }
         self.unreliable_reasons = Counter()
+        self.event_digest = sha256()
+        self.event_count = 0
+        self.first_event_at = None
+        self.warmup_count = 0
+        self.warmup_digest = sha256()
+        self.split_at = None
+
+    @staticmethod
+    def event_bytes(event):
+        return (json.dumps(jsonable(event), sort_keys=True, separators=(",", ":")) + "\n").encode()
+
+    def warmup(self, event):
+        self.flow.apply(event)
+        self.warmup_digest.update(self.event_bytes(event))
+        self.warmup_count += 1
 
     def coverage_report(self):
         """Event counts, not elapsed-time coverage or strategy success probabilities."""
@@ -60,6 +77,10 @@ class Engine:
 
     def step(self, event: Event):
         self.flow.apply(event)
+        self.event_digest.update(self.event_bytes(event))
+        self.event_count += 1
+        if self.first_event_at is None:
+            self.first_event_at = event.ts
         self.last_event = event
         m = self.flow.metrics(event.ts)
         self.risk.roll_day(event.ts)
@@ -114,17 +135,23 @@ def replay(events: list[Event], snapshots: list[Snapshot], config: Config) -> En
     engine = Engine(config, snapshots)
     for e in events:  # Preserve input order: sorting would conceal corrupted streams.
         engine.step(e)
-    # Final valuation uses last known BBO, explicitly marked liquidation at end of dataset.
-    m = engine.flow.metrics(events[-1].ts)
+    return finish_replay(engine)
+
+
+def finish_replay(engine: Engine) -> Engine:
+    """Use the same terminal-fill and unliquidated-position rules for every segment."""
+    now = engine.last_event.ts
+    m = engine.flow.metrics(now)
+    engine.broker.pending = None
     if m.reliable:
         for p in list(engine.broker.positions):
             engine.broker.close(
-                p, events[-1].ts, engine.broker.executable(m, -p.signal.side), "end_of_dataset"
+                p, now, engine.broker.executable(m, -p.signal.side), "end_of_dataset"
             )
         engine.result.equity.append(
             {
-                "ts": events[-1].ts,
-                "equity": config.balance + engine.risk.realized,
+                "ts": now,
+                "equity": engine.c.balance + engine.risk.realized,
                 "realized": engine.risk.realized,
                 "open_positions": 0,
             }
@@ -132,39 +159,27 @@ def replay(events: list[Event], snapshots: list[Snapshot], config: Config) -> En
     if engine.broker.positions:
         engine.result.decisions.append(
             {
-                "ts": events[-1].ts,
+                "ts": now,
                 "reason": "Dataset ended without fresh BBO; positions unliquidated",
             }
         )
+    engine.result.trades = engine.broker.trades
     return engine
 
 
 def out_of_sample(events, snapshots, config, split_at):
     """Fixed config, chronological split; no automatic optimization or model-selection claims."""
     validate_history(events, snapshots)
+    split_at = timestamp(split_at)
     train = [e for e in events if e.ts < split_at]
     test = [e for e in events if e.ts >= split_at]
     if not train or not test:
         raise ValueError("Split needs nonempty chronological training and test segments")
     # Test gets book rebuild/reset and warmup from prefix, but no prefix trades/P&L.
     test_engine = Engine(config, snapshots)
+    test_engine.split_at = split_at
     for e in train:
-        test_engine.flow.apply(e)
+        test_engine.warmup(e)
     for e in test:
         test_engine.step(e)
-    m = test_engine.flow.metrics(test[-1].ts)
-    if m.reliable:
-        for p in list(test_engine.broker.positions):
-            test_engine.broker.close(
-                p, test[-1].ts, test_engine.broker.executable(m, -p.signal.side), "end_of_dataset"
-            )
-        test_engine.result.equity.append(
-            {
-                "ts": test[-1].ts,
-                "equity": config.balance + test_engine.risk.realized,
-                "realized": test_engine.risk.realized,
-                "open_positions": 0,
-            }
-        )
-    test_engine.result.trades = test_engine.broker.trades
-    return replay(train, snapshots, config), test_engine
+    return replay(train, snapshots, config), finish_replay(test_engine)

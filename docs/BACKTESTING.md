@@ -31,3 +31,20 @@ These are event counts, not elapsed-time coverage, statistical confidence, proof
 of feed completeness, or evidence of profitability. Risk and strategy criteria
 can still reject events with both inputs available. The dashboard offers a JSON
 download; CLI report.json includes data_coverage.
+
+
+### Research bundles and reproducibility
+Use **Download research report bundle** after a dashboard run. CLI exports the
+same seven JSON files: manifest, configuration, snapshots, report, trades, equity,
+and decisions. Keep the private original event file separately. The manifest
+records normalized event hashes, event counts, time bounds, source, package
+version, and separate warmup hash/count for out-of-sample runs. Configuration and
+snapshot hashes identify the exact exported bytes. Hashes establish input identity,
+not authenticity, feed completeness, or approval to redistribute data. Preserve
+the Git commit alongside the bundle when comparing code versions.
+
+Bundles include supplied GEX levels and paper account settings. Review before
+sharing; neither raw options CSVs nor raw feed events are bundled. They remain
+local until you deliberately download, copy or share them. Full and out-of-sample
+replay share terminal liquidation handling; unavailable quotes leave positions
+open with an explicit decision-log warning and no fabricated exit.
