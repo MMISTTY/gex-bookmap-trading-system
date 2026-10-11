@@ -66,3 +66,10 @@ This clears the upload, unsaved rows, editor changes and import metadata; it doe
 not convert historical imported levels into fresh manual levels. Enter your own
 current levels before saving. Previously saved snapshots and locked anchors are
 preserved. A successful new import also resets prior editor changes.
+
+
+Saved imported snapshots retain the uploaded CSV SHA-256, detected source kind,
+observation date, filename expiration, calculation spot, sign assumption and
+supplied units in snapshot assumptions. These support audit review without
+embedding the raw private CSV. User edits and provider metadata remain subject
+to the documented limitations; a checksum does not authenticate vendor data.
