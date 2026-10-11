@@ -54,7 +54,13 @@ class Config:
             raise ValueError("Execution is MNQ only: tick 0.25 points / $0.50")
         for f in fields(self):
             v = getattr(self, f.name)
-            if isinstance(v, (int, float)) and (not isfinite(v) or v < 0):
+            if isinstance(f.default, str):
+                if not isinstance(v, str):
+                    raise ValueError(f"{f.name} must be text")
+                continue
+            if type(v) not in (int, float):
+                raise ValueError(f"{f.name} must be a number, not text or a boolean")
+            if not isfinite(v) or v < 0:
                 raise ValueError(f"{f.name} must be finite and nonnegative")
         for n in (
             "max_contracts",
