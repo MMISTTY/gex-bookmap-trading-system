@@ -85,3 +85,12 @@ Use the existing repository and preserve its history. Pull remote changes before
   availability timestamps instead of selecting levels by incidental file order.
 - Added four regression cases; full checkpoint: 58 tests passed, Ruff lint and
   formatting passed. No live feed or historical profitability claim.
+
+## Backtest coverage reporting — 2026-10-11 UTC
+- Verified remote replay-validation commit 3982c16.
+- Added event-based GEX/order-flow coverage and unreliable-data reason counts to
+  the shared engine, dashboard with JSON download, and CLI report export.
+- Counts distinguish absent inputs from a zero-trade strategy result; out-of-sample
+  warmup events are excluded. No probability or elapsed-time claims are made.
+- Verification: 60 tests passed; Ruff lint and formatting passed.
+- Actual point-in-time history and Bookmap permission remain outstanding.

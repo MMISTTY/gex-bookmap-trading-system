@@ -1,5 +1,7 @@
 """Replay and paper mode share the exact event-by-event decision pipeline."""
 
+from collections import Counter
+
 from gexbook.models import Result, Snapshot, Event
 from gexbook.config import Config
 from gexbook.bookmap.flow import OrderFlow
@@ -33,6 +35,24 @@ class Engine:
         self.store = store
         self.result = Result()
         self.last_event = None
+        self.coverage = {
+            "trade_events": 0,
+            "with_gex_snapshot": 0,
+            "with_reliable_order_flow": 0,
+            "with_both": 0,
+        }
+        self.unreliable_reasons = Counter()
+
+    def coverage_report(self):
+        """Event counts, not elapsed-time coverage or strategy success probabilities."""
+        return {
+            **self.coverage,
+            "without_gex_snapshot": self.coverage["trade_events"]
+            - self.coverage["with_gex_snapshot"],
+            "unreliable_order_flow_reasons": dict(self.unreliable_reasons),
+            "basis": "Trade events processed in this segment; warmup prefix excluded",
+            "limitation": "Coverage does not establish feed completeness, entitlements or a trading edge",
+        }
 
     def snapshot_at(self, ts):
         eligible = [s for s in self.snapshots if s.available_at <= ts < s.valid_until]
@@ -48,6 +68,13 @@ class Engine:
             self.broker.pending = None
             self.strategy = Strategy(self.c)
         if event.kind == "trade":
+            has_gex = snapshot is not None and bool(snapshot.levels)
+            self.coverage["trade_events"] += 1
+            self.coverage["with_gex_snapshot"] += int(has_gex)
+            self.coverage["with_reliable_order_flow"] += int(m.reliable)
+            self.coverage["with_both"] += int(has_gex and m.reliable)
+            if not m.reliable:
+                self.unreliable_reasons.update(set(m.reasons))
             self.broker.on_market(event.ts, m)
             approval = self.broker.enter_pending(event.ts, m, snapshot.id if snapshot else None)
             if approval or self.broker.last_rejection:

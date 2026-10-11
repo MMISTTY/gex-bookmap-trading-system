@@ -392,6 +392,17 @@ def backtest_page(c):
     if engine:
         st.warning(engine.result.label)
         st.json(summary(engine.result))
+        st.subheader("Data coverage")
+        st.caption(
+            "Counts refer to trade events, not elapsed time. Coverage is not proof of profitability."
+        )
+        coverage = engine.coverage_report()
+        st.json(coverage)
+        if not coverage["with_both"]:
+            st.warning("No trade events had both a valid GEX snapshot and reliable order flow.")
+        st.download_button(
+            "Download data coverage", json.dumps(coverage, indent=2), "data-coverage.json"
+        )
         if engine.result.equity:
             st.line_chart(pd.DataFrame(jsonable(engine.result.equity)).set_index("ts")["equity"])
         table(engine.result.trades)

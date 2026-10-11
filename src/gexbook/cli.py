@@ -22,6 +22,7 @@ def export(engine, directory):
     result = engine.result
     report = {
         "summary": summary(result),
+        "data_coverage": engine.coverage_report(),
         "by_level": grouped(result, "level_kind"),
         "by_confirmation": grouped(result, "confirmation"),
         "by_side": grouped(result, "side"),

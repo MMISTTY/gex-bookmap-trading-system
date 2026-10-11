@@ -21,3 +21,13 @@ cannot hide out-of-order timestamps. Equal event timestamps remain allowed;
 normal sequence validation still applies. Snapshot IDs and availability timestamps
 must each be unique: ambiguous inputs are rejected rather than resolved by file
 order. Missing or expired GEX coverage continues to prevent entries.
+
+### Data coverage report
+The dashboard and CLI report count processed trade events with valid, nonempty
+GEX snapshots, reliable order flow, and both inputs together. Missing GEX counts
+and order-flow reliability reasons explain data limitations behind zero-trade runs.
+Reason counts can overlap. Out-of-sample coverage excludes the warmup prefix.
+These are event counts, not elapsed-time coverage, statistical confidence, proof
+of feed completeness, or evidence of profitability. Risk and strategy criteria
+can still reject events with both inputs available. The dashboard offers a JSON
+download; CLI report.json includes data_coverage.
