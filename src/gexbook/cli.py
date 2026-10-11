@@ -12,29 +12,17 @@ from gexbook.models import Snapshot, jsonable
 from gexbook.bookmap.adapters import FileTail, read_events
 from gexbook.bookmap.simulation import demo
 from gexbook.backtesting.replay import Engine, replay, out_of_sample
-from gexbook.analytics.performance import summary, grouped
+from gexbook.analytics.reporting import report_files
 from gexbook.storage.sqlite import Store
 
 
 def export(engine, directory):
     p = Path(directory)
     p.mkdir(parents=True, exist_ok=True)
-    result = engine.result
-    report = {
-        "summary": summary(result),
-        "data_coverage": engine.coverage_report(),
-        "by_level": grouped(result, "level_kind"),
-        "by_confirmation": grouped(result, "confirmation"),
-        "by_side": grouped(result, "side"),
-    }
-    for name, payload in [
-        ("report", report),
-        ("trades", result.trades),
-        ("equity", result.equity),
-        ("decisions", result.decisions),
-    ]:
-        (p / f"{name}.json").write_text(json.dumps(jsonable(payload), indent=2))
-    print(json.dumps(report, indent=2))
+    files = report_files(engine)
+    for name, payload in files.items():
+        (p / name).write_bytes(payload)
+    print(files["report.json"].decode("utf-8"))
 
 
 def main():
