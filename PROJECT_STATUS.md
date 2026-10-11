@@ -94,3 +94,24 @@ Use the existing repository and preserve its history. Pull remote changes before
   warmup events are excluded. No probability or elapsed-time claims are made.
 - Verification: 60 tests passed; Ruff lint and formatting passed.
 - Actual point-in-time history and Bookmap permission remain outstanding.
+
+## Consolidated research/portfolio checkpoint — 2026-10-11 UTC
+- Verified remote coverage-report commit 0e4ec7e; batch subsequent changes rather
+  than requiring a download/push per small feature.
+- Added seven-file research bundles and matching CLI exports: input manifest,
+  configuration, snapshots, coverage/performance, trades, equity and decisions.
+- Normalized input hashes and separate out-of-sample warmup hashes/counts support
+  reproducibility; raw CSV/feed files are excluded. Levels/settings remain private.
+- Imported snapshot assumptions now retain source metadata, CSV checksum, calculation
+  spot, dealer-sign assumption and units.
+- Shared terminal handling reports unliquidated positions consistently in replay
+  and OOS runs when final quotes are stale; pending signals are discarded at end.
+- README status and wall methodology corrected; added recruiter demonstration guide.
+- Verification: 63 tests passed, Ruff lint/format and whitespace checks passed;
+  CLI exported seven files for 84 synthetic events/one demonstration trade;
+  Streamlit started successfully with HTTP 200 health check.
+- External gates remain: provider approval, synchronized actual options inputs,
+  SDK/callback/unit verification and real point-in-time history. No live connection,
+  validated historical edge, or production readiness is claimed.
+- Direct publish attempted for this batch: GitHub returned HTTP 403, Resource not
+  accessible by integration. Code is committed locally; remote was not changed.
