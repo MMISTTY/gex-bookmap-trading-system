@@ -179,12 +179,31 @@ def main():
         store.close()
 
 
+def reset_gex_draft():
+    """Discard the entire import draft; never relabel imported levels as manual."""
+    for key in (
+        "level_rows",
+        "level_editor",
+        "gex_notes",
+        "gex_source",
+        "gex_source_profile",
+        "gex_source_digest",
+        "gex_upload",
+        "gex_source_label",
+    ):
+        st.session_state.pop(key, None)
+
+
 def gex_page(store, snapshots):
     st.subheader("Daily GEX import and locked mapping")
     st.caption(
         "QQQ and MNQ coordinates are approximate. The factor is locked per session; quotes do not continuously move levels."
     )
-    upload = st.file_uploader("Options or levels CSV", type=["csv"])
+    st.button("Start a new manual draft", on_click=reset_gex_draft)
+    st.caption(
+        "Starting a manual draft discards unsaved imported levels. Saved snapshots remain available."
+    )
+    upload = st.file_uploader("Options or levels CSV", type=["csv"], key="gex_upload")
     source_info = None
     if upload is not None:
         source_info = inspect_source(upload.name, upload.getvalue().decode("utf-8-sig"))
@@ -216,6 +235,8 @@ def gex_page(store, snapshots):
             as_of=source_info.observed_on or datetime.now(ZoneInfo("America/Chicago")).date(),
         )
         levels, notes = derive_levels(report, spot, assumption, units)
+        st.session_state.pop("level_editor", None)
+        st.session_state.pop("gex_source_label", None)
         st.session_state.level_rows = jsonable(levels)
         st.session_state.gex_notes = report.warnings + list(notes)
         st.session_state.gex_source = upload.name
@@ -260,7 +281,11 @@ def gex_page(store, snapshots):
     now_text = datetime.now(timezone.utc).isoformat()
     qtime = st.text_input("QQQ quote timestamp (with offset)", now_text)
     mtime = st.text_input("MNQ quote timestamp (with offset)", now_text)
-    source = st.text_input("Level source", st.session_state.get("gex_source", "manual user levels"))
+    source = st.text_input(
+        "Level source",
+        st.session_state.get("gex_source", "manual user levels"),
+        key="gex_source_label",
+    )
     if st.button("Map and save session snapshot"):
         # Historical files may be inspected but cannot silently become today's trade inputs.
         imported_profile = st.session_state.get("gex_source_profile")

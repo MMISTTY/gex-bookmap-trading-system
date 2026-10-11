@@ -76,3 +76,63 @@ def test_backdated_import_cannot_be_saved_as_fresh(tmp_path, monkeypatch):
     store = Store()
     assert store.snapshots() == []
     store.close()
+
+
+def test_manual_reset_discards_historical_import_and_preserves_snapshots(tmp_path, monkeypatch):
+    from datetime import date
+    from pathlib import Path
+    from gexbook.gex.source import SourceProfile
+
+    monkeypatch.chdir(tmp_path)
+    app = AppTest.from_file(Path(__file__).resolve().parents[1] / "app.py").run()
+    app.session_state["level_rows"] = [
+        {
+            "id": "old-import",
+            "kind": "Put Wall",
+            "qqq_price": 500.0,
+            "mnq_price": None,
+            "importance": 1.0,
+            "role": "support",
+            "provenance": "provided level",
+            "metric": None,
+            "approximate": True,
+            "override_reason": "",
+        }
+    ]
+    app.session_state["gex_source_profile"] = SourceProfile(
+        "gamma_profile", date(2020, 1, 2), None, "Barchart footer"
+    )
+    app.session_state["gex_source"] = "old.csv"
+    app.session_state["gex_notes"] = ["Historical import"]
+    app.sidebar.radio[0].set_value("GEX Levels").run()
+    next(b for b in app.button if b.label == "Start a new manual draft").click().run()
+    assert not app.exception and not app.error
+    assert (
+        next(x for x in app.text_input if x.label == "Level source").value == "manual user levels"
+    )
+    assert not any("Historical import" in x.value for x in app.warning)
+    next(b for b in app.button if b.label == "Map and save session snapshot").click().run()
+    assert app.error  # Blank reset draft cannot reuse the old imported coordinate.
+    app.session_state["level_rows"] = [
+        {
+            "id": "fresh-manual",
+            "kind": "Put Wall",
+            "qqq_price": 510.0,
+            "mnq_price": None,
+            "importance": 1.0,
+            "role": "support",
+            "provenance": "manual",
+            "metric": None,
+            "approximate": True,
+            "override_reason": "",
+        }
+    ]
+    next(b for b in app.button if b.label == "Map and save session snapshot").click().run()
+    assert not app.exception and not app.error
+    next(b for b in app.button if b.label == "Start a new manual draft").click().run()
+    from gexbook.storage.sqlite import Store
+
+    store = Store()
+    assert len(store.snapshots()) == 1
+    assert store.snapshots()[0].levels[0].qqq_price == 510
+    store.close()

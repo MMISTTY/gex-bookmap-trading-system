@@ -60,3 +60,9 @@ and saved with a fresh availability timestamp. Replacing an uploaded file, inclu
 same-name replacements, requires revalidation. Expired supplied GEX rows are excluded
 before profile aggregation. These checks validate metadata consistency, not the
 truthfulness or intraday availability of a vendor footer.
+
+Use **Start a new manual draft** to switch from CSV inspection to manual entry.
+This clears the upload, unsaved rows, editor changes and import metadata; it does
+not convert historical imported levels into fresh manual levels. Enter your own
+current levels before saving. Previously saved snapshots and locked anchors are
+preserved. A successful new import also resets prior editor changes.

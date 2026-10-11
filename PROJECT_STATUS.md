@@ -65,3 +65,14 @@ Use the existing repository and preserve its history. Pull remote changes before
   lint and formatting passed. No actual Bookmap connection or historical edge validated.
 - Next external steps: apply this review patch, push from the authorized local checkout,
   supply current options data and await Bookmap/provider approval before live capture.
+
+## Manual draft workflow — 2026-10-11 UTC
+- Verified remote commit 3bce894 contains the previous safety review.
+- Added Start a new manual draft: clears unsaved imported rows, upload, editor state,
+  source label and validation metadata, without deleting saved snapshots or anchors.
+- Successful CSV imports clear previous editor changes to prevent stale edits from
+  being applied to newly derived rows.
+- Dashboard regression covers historical-import reset, rejection of a blank draft,
+  successful fresh manual entry and preservation of saved snapshots after reset.
+- Verification: 54 tests passed; Ruff lint, format and git whitespace checks passed.
+- Bookmap approval and actual-data validation remain external gates. No live orders.
