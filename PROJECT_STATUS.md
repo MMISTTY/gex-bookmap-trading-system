@@ -125,3 +125,13 @@ Use the existing repository and preserve its history. Pull remote changes before
 - Added exhaustive malformed-type cases across numeric settings and valid JSON
   round-trip coverage. Verification: 252 tests passed; Ruff lint/format passed.
 - Bookmap/provider approval and actual historical evaluation remain outstanding.
+
+## Aggregate capital reservation — 2026-10-11 UTC
+- Verified configuration-hardening publication at 1804e6c and successful GitHub CI.
+- Risk sizing now subtracts committed open-position stop risk, modeled stop
+  slippage and round-trip fees from available account capital as well as daily
+  loss capacity. This matters when multiple positions are enabled.
+- Long/short regression cases cover denial and reduced sizing with existing
+  exposure. Full suite: 256 cases passed; Ruff lint and format checks passed.
+- These are modeled stop budgets, not guaranteed loss caps: gaps can exceed them.
+- Live Bookmap authorization and actual-data evaluation remain external gates.
