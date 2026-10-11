@@ -95,7 +95,8 @@ class RiskManager:
             for p in positions
         )
         remaining = c.daily_loss + self.day_realized - committed
-        balance = c.balance + self.realized
+        # Open stop risk is already committed capital, even before it is realized.
+        balance = c.balance + self.realized - committed
         qty = min(
             c.max_contracts - sum(p.quantity for p in positions),
             floor(min(c.risk_per_trade, remaining, max(0, balance)) / risk),
