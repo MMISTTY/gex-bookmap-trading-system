@@ -117,6 +117,23 @@ def test_emergency_disconnected_waits_for_real_quote():
     assert risk.manual_lock
 
 
+@pytest.mark.parametrize("side", [1, -1])
+@pytest.mark.parametrize("capital_units, expected", [(1.5, 0), (2.5, 1)])
+def test_open_stop_risk_reserves_account_capital(side, capital_units, expected):
+    _, m, _ = reliable()
+    c = replace(Config(), max_positions=3, max_contracts=10)
+    proposed = signal(m, side)
+    fill = m.ask + 0.25 if side == 1 else m.bid - 0.25
+    unit_risk = RiskManager(c).assess(proposed, fill, m, [], m.ts).risk_per_contract
+    assert unit_risk > 0
+    c = replace(c, balance=capital_units * unit_risk)
+    risk = RiskManager(c)
+    existing = Position(proposed, m.ts, fill, 1, proposed.stop, proposed.target, 0.65)
+    approval = risk.assess(proposed, fill, m, [existing], m.ts)
+    assert approval.quantity == expected
+    assert (1 + approval.quantity) * unit_risk <= c.balance
+
+
 def test_stop_gap_fills_at_adverse_quote_and_fees():
     _, m, _ = reliable()
     c = Config()
