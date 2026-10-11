@@ -13,3 +13,11 @@ python -m gexbook.cli replay --events your-history.jsonl --snapshots your-point-
 The split is chronological and fixed-parameter. Prefix data initializes the test order book and rolling flow; prefix trades, P&L and strategy acceptance state are not copied into the test portfolio. Pick parameters using only the training segment, then freeze them before evaluating the test segment. This feature is not an optimization engine or rolling walk-forward search.
 
 Missing order depth or aggressor sides cannot reconstruct liquidity/absorption/imbalance confirmations. Those inputs remain untestable. Toy synthetic fixtures verify behavior only. No supplied results are validated historical performance. Metrics describe the particular input dataset and execution assumptions, not probabilities of future success.
+
+### Input integrity
+Replay input must start with a reset followed by the required book rebuild. The
+original event order is checked before an out-of-sample partition, so partitioning
+cannot hide out-of-order timestamps. Equal event timestamps remain allowed;
+normal sequence validation still applies. Snapshot IDs and availability timestamps
+must each be unique: ambiguous inputs are rejected rather than resolved by file
+order. Missing or expired GEX coverage continues to prevent entries.

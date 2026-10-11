@@ -76,3 +76,12 @@ Use the existing repository and preserve its history. Pull remote changes before
   successful fresh manual entry and preservation of saved snapshots after reset.
 - Verification: 54 tests passed; Ruff lint, format and git whitespace checks passed.
 - Bookmap approval and actual-data validation remain external gates. No live orders.
+
+## Replay input integrity — 2026-10-11 UTC
+- Verified user's manual-workflow push at 207848e.
+- Validate original event chronology before out-of-sample partitioning, which could
+  otherwise hide out-of-order events across the split boundary.
+- Require initial reset for replay; reject duplicate snapshot IDs and equal snapshot
+  availability timestamps instead of selecting levels by incidental file order.
+- Added four regression cases; full checkpoint: 58 tests passed, Ruff lint and
+  formatting passed. No live feed or historical profitability claim.

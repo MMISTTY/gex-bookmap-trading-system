@@ -8,6 +8,20 @@ from gexbook.risk.manager import RiskManager
 from gexbook.execution.paper import PaperBroker
 
 
+def validate_history(events: list[Event], snapshots: list[Snapshot]) -> None:
+    """Validate original ordering before a split can conceal corrupt chronology."""
+    if not events:
+        raise ValueError("No events to replay")
+    if events[0].kind != "reset":
+        raise ValueError("Replay history must begin with a reset and book rebuild")
+    if any(current.ts < previous.ts for previous, current in zip(events, events[1:])):
+        raise ValueError("Out-of-order timestamp in original replay history")
+    if len({s.id for s in snapshots}) != len(snapshots):
+        raise ValueError("Duplicate snapshot IDs make provenance ambiguous")
+    if len({s.available_at for s in snapshots}) != len(snapshots):
+        raise ValueError("Snapshots with identical availability timestamps are ambiguous")
+
+
 class Engine:
     def __init__(self, config: Config, snapshots: list[Snapshot], store=None):
         self.c = config
@@ -69,8 +83,7 @@ class Engine:
 
 
 def replay(events: list[Event], snapshots: list[Snapshot], config: Config) -> Engine:
-    if not events:
-        raise ValueError("No events to replay")
+    validate_history(events, snapshots)
     engine = Engine(config, snapshots)
     for e in events:  # Preserve input order: sorting would conceal corrupted streams.
         engine.step(e)
@@ -101,6 +114,7 @@ def replay(events: list[Event], snapshots: list[Snapshot], config: Config) -> En
 
 def out_of_sample(events, snapshots, config, split_at):
     """Fixed config, chronological split; no automatic optimization or model-selection claims."""
+    validate_history(events, snapshots)
     train = [e for e in events if e.ts < split_at]
     test = [e for e in events if e.ts >= split_at]
     if not train or not test:
