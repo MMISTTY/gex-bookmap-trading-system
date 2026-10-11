@@ -1,6 +1,6 @@
 # Project status
 
-Updated 2026-10-10 UTC. Paper research MVP published.
+Updated 2026-10-11 UTC. Paper research MVP published; latest verification below.
 
 ## Completed and verified
 - Public repository: https://github.com/MMISTTY/gex-bookmap-trading-system
@@ -115,3 +115,13 @@ Use the existing repository and preserve its history. Pull remote changes before
   validated historical edge, or production readiness is claimed.
 - Direct publish attempted for this batch: GitHub returned HTTP 403, Resource not
   accessible by integration. Code is committed locally; remote was not changed.
+
+## Publication and configuration hardening — 2026-10-11 UTC
+- Research checkpoint published through the authorized browser and merged in PR #1
+  as 1828f9d. Both GitHub checks passed; merged tree matched the tested local code.
+  This supersedes the earlier connector-only publication failure.
+- Numeric configuration fields now reject booleans, text, nulls and containers
+  before risk/strategy processing. Session time fields require text.
+- Added exhaustive malformed-type cases across numeric settings and valid JSON
+  round-trip coverage. Verification: 252 tests passed; Ruff lint/format passed.
+- Bookmap/provider approval and actual historical evaluation remain outstanding.
